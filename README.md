@@ -1,2 +1,2 @@
 # pyqt5Project
-pyqt5ПоДї
+pyqt5йЎ№з›®
