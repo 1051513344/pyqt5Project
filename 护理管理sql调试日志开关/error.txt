@@ -1,0 +1,1 @@
+≥ı ºªØ ß∞‹£∫'adminSqlLogSwitch' object has no attribute 'instruction'

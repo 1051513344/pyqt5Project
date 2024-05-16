@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="pic">
+    <file>退出.ico</file>
+    <file>logo.ico</file>
+  </qresource>
+</RCC>

@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="icon">
+    <file>favicon_ewell.ico</file>
+  </qresource>
+</RCC>
