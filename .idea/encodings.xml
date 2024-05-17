@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="Encoding">
+    <file url="file://$PROJECT_DIR$/剪贴板内容转换器/SourceCode.conf" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/剪贴板内容转换器/dist/SourceCode.conf" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/护理管理sql调试日志开关/SourceCode.conf" charset="GBK" />
     <file url="PROJECT" charset="UTF-8" />
   </component>
 </project>

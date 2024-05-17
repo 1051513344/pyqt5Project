@@ -10,8 +10,10 @@ import re
 class adminSqlLogSwitch(QMainWindow, Ui_MainWindow):
     def __init__(self, parent=None):
         super(adminSqlLogSwitch, self).__init__(parent)
+        self.setFixedSize(322, 268)  # 设置固定大小
         try:
             self.config = {}
+            self.sourceCode = {}
             self.loggerDict = {}
             self.defaultConfig = """{
   "ip": "...",
@@ -67,6 +69,49 @@ class adminSqlLogSwitch(QMainWindow, Ui_MainWindow):
     }
   ]
 }"""
+            self.defaultSourceCode = """
+def getOracleDate(text):
+    import re
+    # oracle日期转换 to_date
+    if text is not None:
+        oracle_date_pattern = ".*\d\d\d\d-\d+-\d+ \d+:\d+:\d+.\d+.*"
+        results = re.findall(oracle_date_pattern, text)
+        if len(results) > 0:
+            result = results[0]
+            if "'" in result:
+                result = result.replace(re.findall("\.\d", result)[0], "")
+                return f"to_date({result} , 'yyyy-mm-dd hh24:mi:ss')"
+            else:
+                result = result.replace(re.findall("\.\d", result)[0], "")
+                return f"to_date('{result}' , 'yyyy-mm-dd hh24:mi:ss')"
+    return ""
+
+def getDbTypeList():
+    return "oracle,mysql".split(",")
+
+def getParamByType(dbType, param):
+    if dbType == "mysql":
+        if param.endswith("(Timestamp)"):
+            param = param.replace("(Timestamp)", "")
+            return f'"{param}"'
+        if param.endswith("(String)"):
+            param = param.replace("(String)", "")
+            return f'"{param}"'
+        if param.endswith("(Integer)"):
+            param = param.replace("(Integer)", "")
+            return f'{param}'
+    if dbType == "oracle":
+        if param.endswith("(Timestamp)"):
+            param = param.replace("(Timestamp)", "")
+            return getOracleDate(param)
+        if param.endswith("(String)"):
+            param = param.replace("(String)", "")
+            return f"'{param}'"
+        if param.endswith("(Integer)"):
+            param = param.replace("(Integer)", "")
+            return f'{param}'
+    return None
+"""
             self.setupUi(self)
             if os.path.exists("config.json"):
                 with open("config.json", "r", encoding='utf-8') as f:
@@ -75,6 +120,12 @@ class adminSqlLogSwitch(QMainWindow, Ui_MainWindow):
                 with open("config.json", "w", encoding='utf-8') as f:
                     f.write(self.defaultConfig)
                 self.config = json.loads(self.defaultConfig)
+            if not os.path.exists("SourceCode.conf"):
+                with open("SourceCode.conf", "w") as f:
+                    f.write(self.defaultSourceCode)
+            with open("SourceCode.conf", "r") as f:
+                self.sourceCode = f.read()
+            self.getParamByType = self.getParamByTypeFunc()
             # 从剪贴板中获取ip
             ip = self.getIpFromClipboard()
             if ip is not None:
@@ -100,6 +151,47 @@ class adminSqlLogSwitch(QMainWindow, Ui_MainWindow):
             QMessageBox.critical(self, '错误', "初始化失败！详见error.txt")
             os.system("error.txt")
             sys.exit()
+
+    def getParamByTypeFunc(self):
+        functions = {}
+        result = {}
+        exec(self.sourceCode, {}, functions)
+        exec(self.sourceCode, functions, result)
+        self.comboBox_2.addItems(result['getDbTypeList']())
+        return result['getParamByType']
+
+    def formatSql(self, dbType, sql):
+        prepare = None
+        params = None
+        for row in sql.split("\n"):
+            if "==>  Preparing: " in row:
+                prepare = row.split("==>  Preparing: ")[1]
+            if "==> Parameters: " in row:
+                params = row.split("==> Parameters: ")[1]
+        if prepare is None:
+            return False, "sql语句为空，请检查！"
+        if params is None:
+            return False, "sql参数为空，请检查！"
+        placeholders = prepare.count("?")
+        paramsSize = params.count(",") + 1
+        if placeholders == paramsSize:
+            paramList = params.split(",")
+            # 清除左右空格
+            paramList = [p.strip() for p in paramList]
+            # 反转列表以配合pop
+            paramList.reverse()
+            result = ""
+            for str in prepare:
+                if str == "?":
+                    try:
+                        result = result + self.getParamByType(dbType, paramList.pop())
+                    except Exception as e:
+                        return False, f"格式化sql发生错误：{e}"
+                else:
+                    result = result + str
+            return True, result
+        else:
+            return False, "sql语句与参数不匹配，请检查！"
 
     def getIpFromClipboard(self):
         pattern = r'.*://(\d+\.\d+\.\d+\.\d+):.*'
@@ -227,8 +319,24 @@ class adminSqlLogSwitch(QMainWindow, Ui_MainWindow):
         QMessageBox.information(self, "提示", f"已将关闭命令复制到剪贴板，请前往服务器粘贴执行命令")
         self.remenberConfig()
 
+    @pyqtSlot()
+    def on_pushButton_3_clicked(self):
+        clipboard = QApplication.clipboard()
+        clipboard_text = clipboard.text()
+        dbType = self.comboBox_2.currentText()
+        success, result = self.formatSql(dbType, clipboard_text)
+        if success:
+            clipboard.setText(result)
+            QMessageBox.information(self, "提示", f"已将格式化的sql复制到剪贴板，请前往数据库粘贴执行sql")
+        else:
+            if result.startswith("格式化sql发生错误："):
+                with open("error.txt", "w") as f:
+                    f.write(result)
+                QMessageBox.critical(self, '错误', "重置配置失败！详见error.txt")
+            else:
+                QMessageBox.warning(self, "提示", result)
     def instruction(self):
-        QMessageBox.information(self, "使用说明书", "复制命令到nurse-admin后台服务所在服务器并执行即可开启和关闭日志调试！\n开启后在护理管理页面操作报错模块即可在项目目录下的logs/admin-sql.log中生成对应的sql日志\n注意：排查完毕后务必关闭调试，避免占用多余的内存\n本软件绿色无毒，完全免费，请放心使用！\n该软件版权归@医惠小徐所有。")
+        QMessageBox.information(self, "使用说明书", "复制命令到nurse-admin后台服务所在服务器并执行即可开启和关闭日志调试！\n开启后在护理管理页面操作报错模块即可在项目目录下的logs/admin-sql.log中生成对应的sql日志\n注意：排查完毕后务必关闭调试，避免占用多余的内存\n格式化sql日志：复制文件admin-sql.log中的sql日志和参数，选择对应数据库类型并格式化即可将sql格式化为可执行sql语句\n本软件绿色无毒，完全免费，请放心使用！\n该软件版权归@医惠小徐所有。")
 
 
 if __name__ == "__main__":
