@@ -121,9 +121,9 @@ def getParamByType(dbType, param):
                     f.write(self.defaultConfig)
                 self.config = json.loads(self.defaultConfig)
             if not os.path.exists("SourceCode.conf"):
-                with open("SourceCode.conf", "w") as f:
+                with open("SourceCode.conf", "w", encoding='utf-8') as f:
                     f.write(self.defaultSourceCode)
-            with open("SourceCode.conf", "r") as f:
+            with open("SourceCode.conf", "r", encoding='utf-8') as f:
                 self.sourceCode = f.read()
             self.getParamByType = self.getParamByTypeFunc()
             # 从剪贴板中获取ip
