@@ -6,11 +6,12 @@ from PyQt5.QtCore import pyqtSlot
 import os
 import json
 import re
+import sqlparse
 
 class adminSqlLogSwitch(QMainWindow, Ui_MainWindow):
     def __init__(self, parent=None):
         super(adminSqlLogSwitch, self).__init__(parent)
-        self.setFixedSize(322, 268)  # 设置固定大小
+        self.setFixedSize(325, 290)  # 设置固定大小
         try:
             self.config = {}
             self.sourceCode = {}
@@ -141,6 +142,8 @@ def getParamByType(dbType, param):
                 packages = [logger['package'] for logger in loggers]
                 self.loggerDict = dict(zip(names, packages))
                 self.comboBox.addItems(names)
+            # 操作系统选项列表
+            self.comboBox_3.addItems(["linux", "windows"])
             # 使用说明书
             self.action.triggered.connect(self.instruction)
             # 光标移至行首
@@ -189,6 +192,7 @@ def getParamByType(dbType, param):
                         return False, f"格式化sql发生错误：{e}"
                 else:
                     result = result + str
+            result = sqlparse.format(result, reindent=True, keyword_case='upper')
             return True, result
         else:
             return False, "sql语句与参数不匹配，请检查！"
@@ -205,7 +209,67 @@ def getParamByType(dbType, param):
                 return ip[0]
         return None
 
+
     def genSwitchShell(self, switch):
+        # 选择操作系统
+        opsystem = self.comboBox_3.currentText()
+        if opsystem == "linux":
+            return self.genSwitchLinuxShell(switch)
+        if opsystem == "windows":
+            return self.genSwitchWinShell(switch)
+
+    def genSwitchWinShell(self, switch):
+        try:
+            if switch:
+                level = "DEBUG"
+            else:
+                level = "WARN"
+            name = self.comboBox.currentText()
+            if name in self.loggerDict:
+                ip = self.lineEdit.text()
+                port = self.spinBox.value()
+                package = self.loggerDict.get(name)
+                headers = "{" + """
+  'Accept-Encoding'='gzip, deflate'
+  'Accept-Language'='zh-CN,zh;q=0.9'
+  'Cache-Control'='no-cache'
+  'Origin'='http://{ip}:{port}'
+  'Pragma'='no-cache'
+  'Referer'='http://{ip}:{port}/nurse-admin-web/swagger-ui.html'
+  'accept'='*/*'
+""".format(ip=ip, port=port) + "} `"
+                if isinstance(package, list):
+                    datas = []
+                    for pack in package:
+                        data = "{`\"{pack}`\":`\"{level}`\"}".replace("{pack}", str(pack)).replace("{level}", level)
+                        datas.append(data)
+                    datas = ",".join(datas)
+                    return f"""$session = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+$session.UserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+Invoke-WebRequest -UseBasicParsing -Uri 'http://{ip}:{port}/nurse-admin-web/tool/logger/updateLevel' `
+-Method 'POST' `
+-WebSession $session `
+-Headers @{headers}
+-ContentType 'application/json' `
+-Body '[{datas}]'""".replace("'", '"')
+                else:
+                    data = "{`\"{package}`\":`\"{level}`\"}".replace("{package}", str(package)).replace("{level}", level)
+                    return f"""$session = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+$session.UserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+Invoke-WebRequest -UseBasicParsing -Uri 'http://{ip}:{port}/nurse-admin-web/tool/logger/updateLevel' `
+-Method 'POST' `
+-WebSession $session `
+-Headers @{headers}
+-ContentType 'application/json' `
+-Body '[{data}]'""".replace("'", '"')
+        except Exception as e:
+            with open("error.txt", "w") as f:
+                f.write("生成命令失败：" + str(e))
+            QMessageBox.critical(self, '错误', "生成命令失败！详见error.txt")
+            os.system("error.txt")
+            sys.exit()
+
+    def genSwitchLinuxShell(self, switch):
         try:
             if switch:
                 level = "DEBUG"

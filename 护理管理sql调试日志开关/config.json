@@ -1,7 +1,11 @@
 {
-  "ip": "...",
+  "ip": "192.168.160.143",
   "port": 8081,
   "loggers": [
+    {
+      "name": "质控检查模块",
+      "package": "com.bozhong.inhospitalqc.dao"
+    },
     {
       "name": "护理排班模块",
       "package": "com.bozhong.schedule.dao"
@@ -9,10 +13,6 @@
     {
       "name": "人员档案模块",
       "package": "com.bozhong.nursestaff.dao"
-    },
-    {
-      "name": "质控检查模块",
-      "package": "com.bozhong.inhospitalqc.dao"
     },
     {
       "name": "护理日常工作模块",

@@ -53,5 +53,16 @@ def formatSql(dbType, sql):
 
 if __name__ == "__main__":
 
-    print(formatSql("oracle", sql))
-
+    # print(formatSql("oracle", sql))
+    ip = "xxx"
+    port = "1902"
+    headers = """{
+  'Accept-Encoding'='gzip, deflate'
+  'Accept-Language'='zh-CN,zh;q=0.9'
+  'Cache-Control'='no-cache'
+  'Origin'='http://{ip}:{port}'
+  'Pragma'='no-cache'
+  'Referer'='http://{ip}:{port}/nurse-admin-web/swagger-ui.html'
+  'accept'='*/*'
+} `""".format(ip=ip, port=port)
+    print(headers)

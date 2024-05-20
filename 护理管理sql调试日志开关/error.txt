@@ -1,1 +1,1 @@
-初始化失败：'adminSqlLogSwitch' object has no attribute 'instruction'
+生成命令失败：unmatched '{' in format spec
