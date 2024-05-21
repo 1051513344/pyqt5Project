@@ -1,1 +1,1 @@
-生成命令失败：unmatched '{' in format spec
+格式化sql发生错误：can only concatenate str (not "NoneType") to str

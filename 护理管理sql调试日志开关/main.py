@@ -192,7 +192,10 @@ def getParamByType(dbType, param):
                         return False, f"格式化sql发生错误：{e}"
                 else:
                     result = result + str
-            result = sqlparse.format(result, reindent=True, keyword_case='upper')
+            try:
+                result = sqlparse.format(result, reindent=True, keyword_case='upper')
+            except Exception as e:
+                QMessageBox.warning(self, "提示", "格式化失败，将输出原始sql！")
             return True, result
         else:
             return False, "sql语句与参数不匹配，请检查！"
@@ -385,20 +388,27 @@ Invoke-WebRequest -UseBasicParsing -Uri 'http://{ip}:{port}/nurse-admin-web/tool
 
     @pyqtSlot()
     def on_pushButton_3_clicked(self):
-        clipboard = QApplication.clipboard()
-        clipboard_text = clipboard.text()
-        dbType = self.comboBox_2.currentText()
-        success, result = self.formatSql(dbType, clipboard_text)
-        if success:
-            clipboard.setText(result)
-            QMessageBox.information(self, "提示", f"已将格式化的sql复制到剪贴板，请前往数据库粘贴执行sql")
-        else:
-            if result.startswith("格式化sql发生错误："):
-                with open("error.txt", "w") as f:
-                    f.write(result)
-                QMessageBox.critical(self, '错误', "重置配置失败！详见error.txt")
+        try:
+            clipboard = QApplication.clipboard()
+            clipboard_text = clipboard.text()
+            dbType = self.comboBox_2.currentText()
+            success, result = self.formatSql(dbType, clipboard_text)
+            if success:
+                clipboard.setText(result)
+                QMessageBox.information(self, "提示", f"已将格式化的sql复制到剪贴板，请前往数据库粘贴执行sql")
             else:
-                QMessageBox.warning(self, "提示", result)
+                if result.startswith("格式化sql发生错误："):
+                    with open("error.txt", "w") as f:
+                        f.write(result)
+                    QMessageBox.critical(self, '错误', "重置配置失败！详见error.txt")
+                else:
+                    QMessageBox.warning(self, "提示", result)
+        except Exception as e:
+            with open("error.txt", "w") as f:
+                f.write("格式化失败：" + str(e))
+            QMessageBox.critical(self, '错误', "格式化失败！详见error.txt")
+            os.system("error.txt")
+            sys.exit()
     def instruction(self):
         QMessageBox.information(self, "使用说明书", "复制命令到nurse-admin后台服务所在服务器并执行即可开启和关闭日志调试！\n开启后在护理管理页面操作报错模块即可在项目目录下的logs/admin-sql.log中生成对应的sql日志\n注意：排查完毕后务必关闭调试，避免占用多余的内存\n格式化sql日志：复制文件admin-sql.log中的sql日志和参数，选择对应数据库类型并格式化即可将sql格式化为可执行sql语句\n本软件绿色无毒，完全免费，请放心使用！\n该软件版权归@医惠小徐所有。")
 
