@@ -80,10 +80,10 @@ def getOracleDate(text):
         if len(results) > 0:
             result = results[0]
             if "'" in result:
-                result = result.replace(re.findall("\.\d", result)[0], "")
+                result = result.replace(re.findall("\.\d+", result)[0], "")
                 return f"to_date({result} , 'yyyy-mm-dd hh24:mi:ss')"
             else:
-                result = result.replace(re.findall("\.\d", result)[0], "")
+                result = result.replace(re.findall("\.\d+", result)[0], "")
                 return f"to_date('{result}' , 'yyyy-mm-dd hh24:mi:ss')"
     return ""
 
