@@ -368,7 +368,7 @@ Invoke-WebRequest -UseBasicParsing -Uri 'http://{ip}:{port}/nurse-admin-web/tool
             return None
         clipboard = QApplication.clipboard()
         clipboard.setText(self.genSwitchShell(True))
-        QMessageBox.information(self, "提示", f"已将开启命令复制到剪贴板，请前往服务器粘贴执行命令")
+        QMessageBox.information(self, "提示", f"已经开启命令复制到剪贴板，请前往服务器粘贴执行命令")
         self.remenberConfig()
 
     @pyqtSlot()
@@ -383,7 +383,7 @@ Invoke-WebRequest -UseBasicParsing -Uri 'http://{ip}:{port}/nurse-admin-web/tool
             return None
         clipboard = QApplication.clipboard()
         clipboard.setText(self.genSwitchShell(False))
-        QMessageBox.information(self, "提示", f"已将关闭命令复制到剪贴板，请前往服务器粘贴执行命令")
+        QMessageBox.information(self, "提示", f"已经关闭命令复制到剪贴板，请前往服务器粘贴执行命令")
         self.remenberConfig()
 
     @pyqtSlot()

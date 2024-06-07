@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="icon">
+    <file>proxy.ico</file>
+  </qresource>
+</RCC>
