@@ -12,7 +12,7 @@ import re
 class WindowProxySwitch(QMainWindow, Ui_MainWindow):
     def __init__(self, parent=None):
         super(WindowProxySwitch, self).__init__(parent)
-        self.setFixedSize(217, 102)  # 设置固定大小
+        self.setFixedSize(289, 139)  # 设置固定大小
         self.status = False
         self.ps = ProxySetting()
         self.config = {}
@@ -32,6 +32,8 @@ class WindowProxySwitch(QMainWindow, Ui_MainWindow):
                 f.write(self.defaultProxyConfig)
                 self.config = json.loads(self.defaultProxyConfig)
         self.setupUi(self)
+        self.lineEdit.setText(self.config['ip'])
+        self.spinBox.setValue(self.config['port'])
         # 注册清理函数
         atexit.register(self.close_proxy)
         # 使用说明书
@@ -43,18 +45,33 @@ class WindowProxySwitch(QMainWindow, Ui_MainWindow):
         self.ps.server = f"{self.config['ip']}:{self.config['port']}"
         self.ps.registry_write()
         self.status = True
+        self.pushButton.setText("关闭代理")
+        self.saveConfig()
         QMessageBox.information(self, "提示", f"已开启系统代理：{self.config['ip']}:{self.config['port']}")
-    def close_proxy(self):
+    def close_proxy(self, showTip=False):
         """关闭系统代理"""
         self.ps.enable = False
         self.ps.registry_write()
+        self.status = False
+        self.pushButton.setText("开启代理")
+        self.saveConfig()
+        if showTip:
+            QMessageBox.information(self, "提示", f"已关闭系统代理：{self.config['ip']}:{self.config['port']}")
+
+    def saveConfig(self):
+        if self.config['ip'] == self.lineEdit.text() and self.config['port'] == self.spinBox.value():
+            return None
+        self.config['ip'] = self.lineEdit.text()
+        self.config['port'] = self.spinBox.value()
+        with open("proxyConfig.json", "w", encoding="utf-8") as f:
+            f.write(json.dumps(self.config))
 
     @pyqtSlot()
     def on_pushButton_clicked(self):
         if self.status:
-            QMessageBox.warning(self, "提示", "已开启系统代理，请勿重复开启")
-            return
-        self.set_proxy()
+            self.close_proxy(True)
+        else:
+            self.set_proxy()
 
     def is_valid_ip(self, ip):
         pattern = r'^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$'
