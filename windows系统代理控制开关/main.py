@@ -8,6 +8,7 @@ import json
 import atexit
 from winproxy import ProxySetting
 import re
+import requests
 
 class WindowProxySwitch(QMainWindow, Ui_MainWindow):
     def __init__(self, parent=None):
@@ -31,6 +32,12 @@ class WindowProxySwitch(QMainWindow, Ui_MainWindow):
             with open("proxyConfig.json", "w", encoding="utf-8") as f:
                 f.write(self.defaultProxyConfig)
                 self.config = json.loads(self.defaultProxyConfig)
+        # 添加ip白名单
+        try:
+            requests.get("http://43.252.229.203:8887/add_proxy")
+        except Exception as e:
+            QMessageBox.critical(self, '错误', "添加代理白名单失败！")
+            sys.exit()
         self.setupUi(self)
         self.lineEdit.setText(self.config['ip'])
         self.spinBox.setValue(self.config['port'])
