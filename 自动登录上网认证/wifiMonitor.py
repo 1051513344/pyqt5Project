@@ -181,8 +181,9 @@ class autoLoginWIFI(QMainWindow, Ui_MainWindow):
         else:
             return True
 
-    def login(self):
-        self.autoConnectWifi()
+    def login(self, connectWifi=False):
+        if connectWifi:
+            self.autoConnectWifi()
         pwdUtil_js = """
         function getTimeStamp() {
             return +(new Date()) + '';
@@ -244,7 +245,8 @@ class autoLoginWIFI(QMainWindow, Ui_MainWindow):
                     "username": self.username,
                     "password": self.AES_Encrypt(self.key, self.password),
                     "direct": self.checkBox_2.isChecked(),
-                    "monitor": self.checkBox_3.isChecked()
+                    "monitor": self.checkBox_3.isChecked(),
+                    "connectWifi": False
                 }
                 with open("RememberMe.json", "w") as f:
                     f.write(json.dumps(rememberMeConfig))
@@ -312,7 +314,7 @@ if __name__ == "__main__":
                 sys.exit(app.exec_())
             else:
                 ui = autoLoginWIFIClose()
-                ui.login()
+                ui.login(rememberMeConfig.get("connectWifi"))
         else:
             # start()
             # ui = autoLoginWIFI()
